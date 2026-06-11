@@ -1,319 +1,159 @@
-"""API client for Sequence financial orchestration platform (standalone package)."""
-
+"""API client façade composing per-category service objects."""
 from __future__ import annotations
 
-import asyncio
-import logging
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-API_BASE_URL = "https://api.getsequence.io/"
-API_TIMEOUT = 30
-
-_LOGGER = logging.getLogger(__name__)
-
-
-class SequenceApiError(Exception):
-    """Base exception for Sequence API errors."""
-
-
-class SequenceAuthError(SequenceApiError):
-    """Authentication error with Sequence API."""
-
-
-class SequenceConnectionError(SequenceApiError):
-    """Connection error with Sequence API."""
+from ._base import BaseClient
+from .exceptions import (
+    SequenceApiError,
+    SequenceAuthError,
+    SequenceConnectionError,
+)
+from .accounts import AccountsService
+from .rules import RulesService
+from .activity import ActivityService
+from .audit_logs import AuditLogsService
 
 
 class SequenceApiClient:
-    """Client for the Sequence API."""
+    """Client façade that composes per-category service objects.
+
+    Users instantiate this class only; category services are exposed as
+    attributes: `client.accounts`, `client.rules`, `client.activity`,
+    and `client.audit_logs`.
+    """
 
     def __init__(self, session: aiohttp.ClientSession, access_token: str) -> None:
-        """Initialize the API client."""
-        self.session = session
-        self.access_token = access_token
-        self.base_url = API_BASE_URL
+        self._base = BaseClient(session, access_token)
+        self.accounts = AccountsService(self._base)
+        self.rules = RulesService(self._base)
+        self.activity = ActivityService(self._base)
+        self.audit_logs = AuditLogsService(self._base)
 
-    async def async_get_accounts(self) -> dict[str, Any]:
-        """Retrieve all accounts (Pods, Income Sources, external accounts)."""
-        headers = {
-            "x-sequence-access-token": f"Bearer {self.access_token}",
-            "Content-Type": "application/json",
-        }
-        url = f"{self.base_url}/accounts"
-        try:
-            async with asyncio.timeout(API_TIMEOUT):
-                async with self.session.post(url, headers=headers, json={}) as response:
-                    if response.status == 401:
-                        raise SequenceAuthError("Invalid access token")
-                    if response.status != 200:
-                        raise SequenceApiError(
-                            f"API request failed with status {response.status}"
-                        )
-                    data = await response.json()
-                    _LOGGER.debug("Retrieved accounts data: %s", data)
-                    return data
-        except TimeoutError as err:
-            raise SequenceConnectionError(
-                "Timeout while connecting to Sequence API"
-            ) from err
-        except aiohttp.ClientError as err:
-            raise SequenceConnectionError(
-                f"Failed to connect to Sequence API: {err}"
-            ) from err
+    # Async convenience wrappers that mirror older flat client API
+    async def async_get_accounts(self, *args, **kwargs):
+        return await self.accounts.async_get_accounts(*args, **kwargs)
 
-    async def async_test_connection(self) -> bool:
-        """Test the connection to the Sequence API."""
-        try:
-            await self.async_get_accounts()
-        except SequenceApiError:
-            return False
-        else:
-            return True
+    async def async_get_account(self, *args, **kwargs):
+        return await self.accounts.async_get_account(*args, **kwargs)
 
-    def get_pod_accounts(self, accounts_data: dict[str, Any]) -> list[dict[str, Any]]:
-        """Filter and return only Pod accounts from the accounts data."""
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        return [account for account in accounts if account.get("type") == "Pod"]
+    async def async_test_connection(self, *args, **kwargs):
+        return await self.accounts.async_test_connection(*args, **kwargs)
 
-    def get_income_source_accounts(
-        self, accounts_data: dict[str, Any]
-    ) -> list[dict[str, Any]]:
-        """Filter and return only Income Source accounts from the accounts data."""
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        return [
-            account for account in accounts if account.get("type") == "Income Source"
-        ]
+    async def async_list_transfers(self, *args, **kwargs):
+        return await self.activity.async_list_transfers(*args, **kwargs)
 
-    def get_total_balance(self, accounts_data: dict[str, Any]) -> float:
-        """Calculate total balance across all accounts."""
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        total = 0.0
-        for account in accounts:
-            balance_info = account.get("balance", {})
-            if (
-                balance_info.get("error") is None
-                and balance_info.get("amountInDollars") is not None
-            ):
-                total += balance_info["amountInDollars"]
+    async def async_list_transfers_by_account(self, *args, **kwargs):
+        return await self.activity.async_list_transfers_by_account(*args, **kwargs)
+
+    async def async_get_transfer(self, *args, **kwargs):
+        return await self.activity.async_get_transfer(*args, **kwargs)
+
+    async def async_create_transfer(self, *args, **kwargs):
+        return await self.activity.async_create_transfer(*args, **kwargs)
+
+    async def async_list_external_transactions(self, *args, **kwargs):
+        return await self.activity.async_list_external_transactions(*args, **kwargs)
+
+    async def async_list_card_transactions(self, *args, **kwargs):
+        return await self.activity.async_list_card_transactions(*args, **kwargs)
+
+    async def async_list_rules(self, *args, **kwargs):
+        return await self.rules.async_list_rules(*args, **kwargs)
+
+    async def async_get_rule(self, *args, **kwargs):
+        return await self.rules.async_get_rule(*args, **kwargs)
+
+    async def async_trigger_rule(self, *args, **kwargs):
+        return await self.rules.async_trigger_rule(*args, **kwargs)
+
+    async def async_list_rule_executions(self, *args, **kwargs):
+        return await self.rules.async_list_rule_executions(*args, **kwargs)
+
+    async def async_get_rule_execution(self, *args, **kwargs):
+        return await self.rules.async_get_rule_execution(*args, **kwargs)
+
+    async def async_list_audit_logs(self, *args, **kwargs):
+        return await self.audit_logs.async_list_audit_logs(*args, **kwargs)
+
+    # Synchronous helper utilities for account lists and balances
+    def get_pod_accounts(self, data: dict):
+        accounts = (data or {}).get("data", {}).get("accounts", [])
+        return [a for a in accounts if str(a.get("type", "")).lower() == "pod"]
+
+    def get_income_source_accounts(self, data: dict):
+        accounts = (data or {}).get("data", {}).get("accounts", [])
+        return [a for a in accounts if str(a.get("type", "")).lower() == "income source" ]
+
+    def get_external_accounts(self, data: dict):
+        accounts = (data or {}).get("data", {}).get("accounts", [])
+        return [a for a in accounts if str(a.get("type", "")).lower() == "account"]
+
+    def get_liability_accounts(self, data: dict, ids: list | None = None):
+        accounts = (data or {}).get("data", {}).get("accounts", [])
+        if ids:
+            return [a for a in accounts if a.get("id") in ids]
+        return [a for a in accounts if str(a.get("type", "")).lower() == "liability"]
+
+    def get_investment_accounts(self, data: dict, ids: list | None = None):
+        accounts = (data or {}).get("data", {}).get("accounts", [])
+        if ids:
+            return [a for a in accounts if a.get("id") in ids]
+        return [a for a in accounts if str(a.get("type", "")).lower() == "investment"]
+
+    def get_total_balance(self, data: dict):
+        accounts = (data or {}).get("data", {}).get("accounts", [])
+        total = 0
+        for a in accounts:
+            bal = a.get("balance", {})
+            amt = bal.get("amountInDollars")
+            err = bal.get("error")
+            if amt is None or err:
+                continue
+            try:
+                total += int(amt)
+            except Exception:
+                pass
         return total
 
-    def get_pod_balance(self, accounts_data: dict[str, Any]) -> float:
-        """Calculate total balance across all Pod accounts."""
-        pod_accounts = self.get_pod_accounts(accounts_data)
-        total = 0.0
-        for account in pod_accounts:
-            balance_info = account.get("balance", {})
-            if (
-                balance_info.get("error") is None
-                and balance_info.get("amountInDollars") is not None
-            ):
-                total += balance_info["amountInDollars"]
+    def get_pod_balance(self, data: dict):
+        pods = self.get_pod_accounts(data)
+        return self.get_total_balance({"data": {"accounts": pods}})
+
+    def get_balance_by_type(self, data: dict, t: str):
+        accounts = (data or {}).get("data", {}).get("accounts", [])
+        total = 0
+        for a in accounts:
+            if str(a.get("type", "")).lower() != str(t).lower():
+                continue
+            bal = a.get("balance", {})
+            amt = bal.get("amountInDollars")
+            err = bal.get("error")
+            if amt is None or err:
+                continue
+            try:
+                total += int(amt)
+            except Exception:
+                pass
         return total
 
-    def get_liability_accounts(
-        self,
-        accounts_data: dict[str, Any],
-        liability_account_ids: list[str] | None = None,
-    ) -> list[dict[str, Any]]:
-        """Filter and return Liability accounts from the accounts data.
-        If liability_account_ids is provided, it will return accounts with those IDs
-        (typically External accounts being categorized as liabilities).
-        Otherwise, it falls back to filtering by type 'Liability'.
-        """
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        if liability_account_ids:
-            return [
-                account
-                for account in accounts
-                if str(account.get("id")) in liability_account_ids
-            ]
-        return [account for account in accounts if account.get("type") == "Liability"]
+    def get_account_types_summary(self, data: dict):
+        accounts = (data or {}).get("data", {}).get("accounts", [])
+        summary: dict = {}
+        for a in accounts:
+            t = a.get("type", "Unknown")
+            bal = a.get("balance", {})
+            amt = bal.get("amountInDollars")
+            err = bal.get("error")
+            if t not in summary:
+                summary[t] = {"count": 0, "total_balance": 0}
+            summary[t]["count"] += 1
+            if amt is not None and not err:
+                try:
+                    summary[t]["total_balance"] += int(amt)
+                except Exception:
+                    pass
+        return summary
 
-    def get_investment_accounts(
-        self,
-        accounts_data: dict[str, Any],
-        investment_account_ids: list[str] | None = None,
-    ) -> list[dict[str, Any]]:
-        """Filter and return Investment accounts from the accounts data.
-        If investment_account_ids is provided, it will return accounts with those IDs
-        (typically External accounts being categorized as investments).
-        Otherwise, it falls back to filtering by type 'Investment'.
-        """
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        if investment_account_ids:
-            return [
-                account
-                for account in accounts
-                if str(account.get("id")) in investment_account_ids
-            ]
-        return [account for account in accounts if account.get("type") == "Investment"]
-
-    def get_external_accounts(
-        self, accounts_data: dict[str, Any]
-    ) -> list[dict[str, Any]]:
-        """Filter and return only External accounts from the accounts data."""
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        return [
-            account
-            for account in accounts
-            if account.get("type")
-            not in ["Pod", "Income Source", "Liability", "Investment"]
-        ]
-
-    def get_balance_by_type(
-        self, accounts_data: dict[str, Any], account_type: str
-    ) -> float:
-        """Calculate total balance for accounts of a specific type."""
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        total = 0.0
-        for account in accounts:
-            if account.get("type") == account_type:
-                balance_info = account.get("balance", {})
-                if (
-                    balance_info.get("error") is None
-                    and balance_info.get("amountInDollars") is not None
-                ):
-                    total += balance_info["amountInDollars"]
-        return total
-
-    def get_account_types_summary(
-        self, accounts_data: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Get a summary of all account types and their totals."""
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        types_summary: dict[str, dict[str, Any]] = {}
-        for account in accounts:
-            account_type = account.get("type", "Unknown")
-            if account_type not in types_summary:
-                types_summary[account_type] = {
-                    "count": 0,
-                    "total_balance": 0.0,
-                    "accounts": [],
-                }
-            balance_info = account.get("balance", {})
-            if (
-                balance_info.get("error") is None
-                and balance_info.get("amountInDollars") is not None
-            ):
-                types_summary[account_type]["total_balance"] += balance_info[
-                    "amountInDollars"
-                ]
-            types_summary[account_type]["count"] += 1
-            types_summary[account_type]["accounts"].append(
-                {
-                    "id": account.get("id"),
-                    "name": account.get("name"),
-                    "balance": balance_info.get("amountInDollars"),
-                    "error": balance_info.get("error"),
-                }
-            )
-        return types_summary
-
-    def get_configured_liability_balance(
-        self,
-        accounts_data: dict[str, Any],
-        liability_account_ids: list[str] | None = None,
-    ) -> float:
-        """Calculate total balance for configured liability accounts."""
-        total = self.get_balance_by_type(accounts_data, "Liability")
-        if liability_account_ids:
-            liability_accounts = self.get_liability_accounts(
-                accounts_data, liability_account_ids
-            )
-            for account in liability_accounts:
-                balance_info = account.get("balance", {})
-                if (
-                    balance_info.get("error") is None
-                    and balance_info.get("amountInDollars") is not None
-                ):
-                    total += balance_info["amountInDollars"]
-        return total
-
-    def get_configured_investment_balance(
-        self,
-        accounts_data: dict[str, Any],
-        investment_account_ids: list[str] | None = None,
-    ) -> float:
-        """Calculate total balance for configured investment accounts."""
-        total = self.get_balance_by_type(accounts_data, "Investment")
-        if investment_account_ids:
-            investment_accounts = self.get_investment_accounts(
-                accounts_data, investment_account_ids
-            )
-            for account in investment_accounts:
-                balance_info = account.get("balance", {})
-                if (
-                    balance_info.get("error") is None
-                    and balance_info.get("amountInDollars") is not None
-                ):
-                    total += balance_info["amountInDollars"]
-        return total
-
-    def get_uncategorized_external_accounts(
-        self,
-        accounts_data: dict[str, Any],
-        liability_account_ids: list[str] | None = None,
-        investment_account_ids: list[str] | None = None,
-    ) -> list[dict[str, Any]]:
-        """Get external accounts that are not categorized as liabilities or investments."""
-        all_external = self.get_external_accounts(accounts_data)
-        liability_ids = set(liability_account_ids or [])
-        investment_ids = set(investment_account_ids or [])
-        return [
-            account
-            for account in all_external
-            if str(account.get("id")) not in liability_ids
-            and str(account.get("id")) not in investment_ids
-        ]
-
-    def get_uncategorized_external_balance(
-        self,
-        accounts_data: dict[str, Any],
-        liability_account_ids: list[str] | None = None,
-        investment_account_ids: list[str] | None = None,
-    ) -> float:
-        """Calculate total balance for uncategorized external accounts."""
-        uncategorized_accounts = self.get_uncategorized_external_accounts(
-            accounts_data, liability_account_ids, investment_account_ids
-        )
-        total = 0.0
-        for account in uncategorized_accounts:
-            balance_info = account.get("balance", {})
-            if (
-                balance_info.get("error") is None
-                and balance_info.get("amountInDollars") is not None
-            ):
-                total += balance_info["amountInDollars"]
-        return total
-
-    def get_adjusted_total_balance(
-        self,
-        accounts_data: dict[str, Any],
-        liability_account_ids: list[str] | None = None,
-        liability_configured: bool = False,
-    ) -> float | None:
-        """Calculate adjusted total balance treating liabilities as negative values.
-        Returns None if liabilities exist but haven't been configured.
-        """
-        accounts = accounts_data.get("data", {}).get("accounts", [])
-        external_accounts = [acc for acc in accounts if acc.get("type") == "Account"]
-        if external_accounts and not liability_configured:
-            return None
-        total = 0.0
-        for account in accounts:
-            balance_info = account.get("balance", {})
-            if (
-                balance_info.get("error") is None
-                and balance_info.get("amountInDollars") is not None
-            ):
-                balance = balance_info["amountInDollars"]
-                if (
-                    liability_account_ids
-                    and str(account.get("id")) in liability_account_ids
-                    and account.get("type") == "Account"
-                ):
-                    balance = -balance
-                total += balance
-        return total

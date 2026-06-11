@@ -1,0 +1,19 @@
+{
+  "name": "GetSequenceIoApiClient Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "remoteUser": "vscode",
+  "settings": {
+    "python.defaultInterpreterPath": "/usr/local/bin/python"
+  },
+  "extensions": [
+    "ms-python.python"
+  ],
+  "postCreateCommand": "python -m pip install --upgrade pip && pip install -e '.[test]' || pip install -e . && pip install pytest",
+  "forwardPorts": [],
+  "features": {}
+}

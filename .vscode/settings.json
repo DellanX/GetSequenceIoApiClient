@@ -1,0 +1,13 @@
+{
+  "cSpell.words": [
+    "façade"
+  ],
+  "chat.tools.terminal.autoApprove": {
+    "/workspace/.venv/bin/python": true
+  },
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
+}

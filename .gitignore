@@ -26,9 +26,6 @@ ENV/
 .dmypy.json
 .pyre/
 
-# VS Code
-.vscode/
-
 # Jupyter
 .ipynb_checkpoints/
 
