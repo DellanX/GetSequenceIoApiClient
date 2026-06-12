@@ -2,7 +2,7 @@
 
 import pytest
 from GetSequenceIoApiClient.client import SequenceApiClient
-from tests.test_client import DummyResponse, DummySession
+from tests._dummy_client import DummyResponse, DummySession
 from GetSequenceIoApiClient import models
 
 
@@ -21,7 +21,7 @@ async def test_async_list_audit_logs_params_and_models():
     resp = DummyResponse(200, {"items": [log], "pagination": {"page": 1, "pageSize": 10, "hasNextPage": False}})
     session = DummySession(resp)
     client = SequenceApiClient(session, "token")
-    logs = await client.async_list_audit_logs(api_key_id="k1", action="LIST_ACCOUNTS")
+    logs = await client.audit_logs.async_list_audit_logs(api_key_id="k1", action="LIST_ACCOUNTS")
     # verify params encoded
     params = session.last_request["params"]
     assert params.get("apiKeyId") == "k1"
@@ -37,5 +37,5 @@ async def test_async_list_audit_logs_pagination_concat():
     resp2 = DummyResponse(200, {"items": [log2], "pagination": {"page": 2, "pageSize": 1, "hasNextPage": False}})
     session = DummySession([resp1, resp2])
     client = SequenceApiClient(session, "token")
-    results = await client.async_list_audit_logs()
+    results = await client.audit_logs.async_list_audit_logs()
     assert len(results) == 2

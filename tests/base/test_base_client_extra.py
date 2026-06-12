@@ -6,7 +6,7 @@ import aiohttp
 
 from GetSequenceIoApiClient import _base
 from GetSequenceIoApiClient.exceptions import SequenceConnectionError, SequenceAuthError, SequenceApiError
-from tests.test_client import DummyResponse, DummySession
+from tests._dummy_client import DummyResponse, DummySession
 
 
 class SlowResponse:
@@ -125,7 +125,7 @@ async def test_async_get_all_pages_handles_list_results():
     session = DummySession(resp)
     from GetSequenceIoApiClient.client import SequenceApiClient
     client = SequenceApiClient(session, "token")
-    results = await client.async_list_transfers()
+    results = await client.activity.async_list_transfers()
     assert isinstance(results, list)
 
 
@@ -175,3 +175,14 @@ async def test_async_get_all_pages_with_page_param_returns_items():
     base = _base.BaseClient(session, "token")
     items = await base._async_get_all_pages("http://example", {"page": 1})
     assert isinstance(items, list)
+
+
+@pytest.mark.asyncio
+async def test_async_get_all_pages_with_page_param_and_list_response():
+    # When params contains 'page' and the returned data is a list, ensure it returns the list
+    resp = DummyResponse(200, [{"id": "x1"}, {"id": "x2"}])
+    session = DummySession(resp)
+    base = _base.BaseClient(session, "token")
+    res = await base._async_get_all_pages("http://example", {"page": 1})
+    assert isinstance(res, list)
+    assert {r["id"] for r in res} == {"x1", "x2"}
