@@ -1,26 +1,24 @@
 """Comprehensive model tests to increase coverage."""
 
-from GetSequenceIoApiClient.models import (
-    Balance,
-    LinkedAccountSummary,
-    LinkedAccount,
-    AccountSummary,
-    Account,
-    TransferAccountRef,
-    Transfer,
-    RuleSummary,
-    Rule,
-    RuleExecutionSummary,
-    RuleExecution,
-    ExternalTransaction,
-    Transaction,
-    AuditLogEntry,
-    AccountType,
-    ExecutionMode,
-    TransactionDirection,
-    TransactionStatus,
-    RuleExecutionStatus,
-)
+from GetSequenceIoApiClient.models.account import Account
+from GetSequenceIoApiClient.models.account_summary import AccountSummary
+from GetSequenceIoApiClient.models.account_type import AccountType
+from GetSequenceIoApiClient.models.audit_log_entry import AuditLogEntry
+from GetSequenceIoApiClient.models.balance import Balance
+from GetSequenceIoApiClient.models.execution_mode import ExecutionMode
+from GetSequenceIoApiClient.models.external_transaction import ExternalTransaction
+from GetSequenceIoApiClient.models.linked_account import LinkedAccount
+from GetSequenceIoApiClient.models.linked_account_summary import LinkedAccountSummary
+from GetSequenceIoApiClient.models.rule import Rule
+from GetSequenceIoApiClient.models.rule_execution import RuleExecution
+from GetSequenceIoApiClient.models.rule_execution_status import RuleExecutionStatus
+from GetSequenceIoApiClient.models.rule_execution_summary import RuleExecutionSummary
+from GetSequenceIoApiClient.models.rule_summary import RuleSummary
+from GetSequenceIoApiClient.models.transaction import Transaction
+from GetSequenceIoApiClient.models.transaction_direction import TransactionDirection
+from GetSequenceIoApiClient.models.transaction_status import TransactionStatus
+from GetSequenceIoApiClient.models.transfer import Transfer
+from GetSequenceIoApiClient.models.transfer_account_ref import TransferAccountRef
 
 
 def test_balance_from_and_to_dict_and_properties():

@@ -1,9 +1,12 @@
 """Consolidated ActivityService tests."""
 
 import pytest
-from GetSequenceIoApiClient.client import SequenceApiClient, SequenceApiError
+from GetSequenceIoApiClient.client import SequenceApiClient
 from GetSequenceIoApiClient.activity import ActivityService
-from GetSequenceIoApiClient.models import Transfer, Transaction, ExternalTransaction
+from GetSequenceIoApiClient.exceptions import SequenceApiError
+from GetSequenceIoApiClient.models.external_transaction import ExternalTransaction
+from GetSequenceIoApiClient.models.transaction import Transaction
+from GetSequenceIoApiClient.models.transfer import Transfer
 from tests._dummy_client import DummyResponse, DummySession
 
 

@@ -6,11 +6,6 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 
 from ._base import BaseClient
-from .exceptions import (
-    SequenceApiError,
-    SequenceAuthError,
-    SequenceConnectionError,
-)
 from .accounts import AccountsService
 from .rules import RulesService
 from .activity import ActivityService

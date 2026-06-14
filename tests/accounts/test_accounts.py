@@ -4,7 +4,7 @@ import pytest
 
 from GetSequenceIoApiClient.client import SequenceApiClient
 from GetSequenceIoApiClient.accounts import AccountsService
-from GetSequenceIoApiClient.models import Account
+from GetSequenceIoApiClient.models.account import Account
 from tests._dummy_client import DummyResponse, DummySession
 
 
