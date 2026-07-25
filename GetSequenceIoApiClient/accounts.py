@@ -1,15 +1,17 @@
 """Accounts-related API methods grouped into a service class."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from ._base import BaseClient
+from ._params import AccountsListParams
+from ._resource import BaseResource
 from .models import Account, AccountSummary
 
 
-class AccountsService:
+class AccountsService(BaseResource):
     def __init__(self, base: BaseClient) -> None:
-        self._base = base
+        super().__init__(base)
 
     async def async_get_accounts(
         self,
@@ -18,27 +20,21 @@ class AccountsService:
         page: Optional[int] = None,
         page_size: Optional[int] = None,
     ) -> List[AccountSummary]:
-        params: Dict[str, Any] = {}
-        if type:
-            params["type"] = type
-        if state:
-            params["state"] = state
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["pageSize"] = page_size
-
-        url = f"{self._base.base_url}/accounts"
-        if page is not None:
-            data = await self._base._async_request("GET", url, params=params)
-            items = data.get("items", []) if isinstance(data, dict) else []
-        else:
-            items = await self._base._async_get_all_pages(url, params)
-
-        return [AccountSummary.from_dict(item) for item in items]
+        params = AccountsListParams(
+            type=type,
+            state=state,
+            page=page,
+            page_size=page_size,
+        ).to_params()
+        return await self._list_items(
+            path="accounts",
+            params=params,
+            page=page,
+            item_model=AccountSummary,
+        )
 
     async def async_get_account(self, account_id: str) -> Account:
-        url = f"{self._base.base_url}/accounts/{account_id}"
+        url = self._url(f"accounts/{account_id}")
         data = await self._base._async_request("GET", url)
         return Account.from_dict(data)
 

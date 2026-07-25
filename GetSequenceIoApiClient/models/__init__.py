@@ -1,5 +1,6 @@
 """Models representing Sequence API schemas."""
 
+from ._base import QueryParamsModel, SequenceModel
 from .account import Account
 from .account_summary import AccountSummary
 from .account_type import AccountType
@@ -12,6 +13,15 @@ from .linked_account import LinkedAccount
 from .linked_account_summary import LinkedAccountSummary
 from .rule import Rule
 from .rule_execution import RuleExecution
+from .rule_schema import (
+    AccountNode,
+    ChainableRuleCondition,
+    RuleAction,
+    RuleCondition,
+    RuleStep,
+    Trigger,
+    TriggerDetails,
+)
 from .rule_execution_status import RuleExecutionStatus
 from .rule_execution_summary import RuleExecutionSummary
 from .rule_summary import RuleSummary
@@ -22,6 +32,8 @@ from .transfer import Transfer
 from .transfer_account_ref import TransferAccountRef
 
 __all__ = [
+    "SequenceModel",
+    "QueryParamsModel",
     "Account",
     "AccountSummary",
     "AccountType",
@@ -33,6 +45,13 @@ __all__ = [
     "LinkedAccount",
     "LinkedAccountSummary",
     "Rule",
+    "Trigger",
+    "TriggerDetails",
+    "RuleStep",
+    "RuleAction",
+    "RuleCondition",
+    "ChainableRuleCondition",
+    "AccountNode",
     "RuleExecution",
     "RuleExecutionStatus",
     "RuleExecutionSummary",

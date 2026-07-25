@@ -129,16 +129,33 @@ def test_rules_and_executions():
     od = rsum.to_dict()
     assert od["isSupported"] is True
 
-    rule = {"id": "r1", "name": "R", "status": "ACTIVE", "trigger": {"x": 1}, "steps": [{"a": 1}]}
+    rule = {
+        "id": "r1",
+        "name": "R",
+        "status": "ACTIVE",
+        "trigger": {"type": "MANUAL", "accountId": "acc1"},
+        "steps": [{"actions": [{"type": "FIXED"}], "conditions": None}],
+    }
     rfull = Rule.from_dict(rule)
-    assert rfull.steps == [{"a": 1}]
+    assert rfull.steps[0].actions[0].type == "FIXED"
 
     re = {"id": "re1", "ruleId": "r1", "status": "EXECUTED", "executionMode": "SIMULATION", "createdAt": "2024-01-01"}
     summary = RuleExecutionSummary.from_dict(re)
     assert summary.status == RuleExecutionStatus.EXECUTED
     assert summary.execution_mode == ExecutionMode.SIMULATION
 
-    rex = {**re, "triggerDetails": {"t": True}, "stepIndexMatched": 2, "conditionsNotMet": True, "transfersAttempted": 1, "transfersCompleted": 0, "transfersFailed": 0, "transfersPending": 0, "transferIds": ["t1"], "errorMessage": "e"}
+    rex = {
+        **re,
+        "triggerDetails": {"type": "MANUAL", "amountInCents": 100},
+        "stepIndexMatched": 2,
+        "conditionsNotMet": True,
+        "transfersAttempted": 1,
+        "transfersCompleted": 0,
+        "transfersFailed": 0,
+        "transfersPending": 0,
+        "transferIds": ["t1"],
+        "errorMessage": "e",
+    }
     re_full = RuleExecution.from_dict(rex)
     od = re_full.to_dict()
     assert od["transferIds"] == ["t1"]

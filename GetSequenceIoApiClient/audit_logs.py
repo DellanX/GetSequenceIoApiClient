@@ -1,15 +1,17 @@
 """Audit logs API methods grouped into a service class."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from ._base import BaseClient
+from ._params import AuditLogsListParams
+from ._resource import BaseResource
 from .models import AuditLogEntry
 
 
-class AuditLogsService:
+class AuditLogsService(BaseResource):
     def __init__(self, base: BaseClient) -> None:
-        self._base = base
+        super().__init__(base)
 
     async def async_list_audit_logs(
         self,
@@ -20,25 +22,17 @@ class AuditLogsService:
         page: Optional[int] = None,
         page_size: Optional[int] = None,
     ) -> List[AuditLogEntry]:
-        params: Dict[str, Any] = {}
-        if api_key_id:
-            params["apiKeyId"] = api_key_id
-        if action:
-            params["action"] = action
-        if from_date:
-            params["from"] = from_date
-        if to_date:
-            params["to"] = to_date
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["pageSize"] = page_size
-
-        url = f"{self._base.base_url}/audit-logs"
-        if page is not None:
-            data = await self._base._async_request("GET", url, params=params)
-            items = data.get("items", []) if isinstance(data, dict) else []
-        else:
-            items = await self._base._async_get_all_pages(url, params)
-
-        return [AuditLogEntry.from_dict(item) for item in items]
+        params = AuditLogsListParams(
+            api_key_id=api_key_id,
+            action=action,
+            from_date=from_date,
+            to_date=to_date,
+            page=page,
+            page_size=page_size,
+        ).to_params()
+        return await self._list_items(
+            path="audit-logs",
+            params=params,
+            page=page,
+            item_model=AuditLogEntry,
+        )

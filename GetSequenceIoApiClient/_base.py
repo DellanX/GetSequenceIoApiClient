@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Callable, AsyncContextManager
+from typing import Optional, Callable, AsyncContextManager, cast
 
 import aiohttp
 import inspect
+from pydantic import ValidationError
 
+from .config import SequenceClientConfig
+from ._types import ApiErrorResponse, Headers, JsonObject, JsonValue, PaginatedResponse, QueryParams
 from .exceptions import (
     SequenceApiError,
     SequenceAuthError,
@@ -28,14 +31,27 @@ class BaseClient:
         session: aiohttp.ClientSession,
         access_token: str,
         *,
+        config: Optional[SequenceClientConfig] = None,
+        base_url: Optional[str] = None,
+        timeout: Optional[int] = None,
         request_factory: Optional[Callable[..., AsyncContextManager]] = None,
         timeout_ctx_factory: Optional[Callable[[int], AsyncContextManager]] = None,
     ) -> None:
         self.session = session
         self.access_token = access_token
-        self.base_url = API_BASE_URL
+        resolved_base_url = base_url if base_url is not None else API_BASE_URL
+        resolved_timeout = timeout if timeout is not None else API_TIMEOUT
+        try:
+            resolved_config = config or SequenceClientConfig(
+                base_url=resolved_base_url,
+                timeout_seconds=resolved_timeout,
+            )
+        except ValidationError as err:
+            raise ValueError(f"Invalid Sequence client configuration: {err}") from err
+
+        self.base_url = resolved_config.base_url
         # make timeout injectable for tests
-        self.timeout = API_TIMEOUT
+        self.timeout = resolved_config.timeout_seconds
 
         # request_factory should return an async-context-manager or awaitable
         # that yields a response when awaited. Default uses the session.
@@ -59,9 +75,9 @@ class BaseClient:
         self,
         method: str,
         url: str,
-        headers: Dict[str, str],
-        params: Optional[Dict[str, Any]],
-        json: Optional[Dict[str, Any]],
+        headers: Headers,
+        params: Optional[QueryParams],
+        json: Optional[JsonObject],
     ):
         """Return an async-context-manager for the request. Overridable
         for tests via `request_factory` passed to the constructor.
@@ -75,10 +91,10 @@ class BaseClient:
         self,
         method: str,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None,
-    ) -> Any:
+        headers: Optional[Headers] = None,
+        params: Optional[QueryParams] = None,
+        json: Optional[JsonObject] = None,
+    ) -> JsonValue:
         req_headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
@@ -96,7 +112,7 @@ class BaseClient:
 
                     if response.status not in (200, 201, 202):
                         try:
-                            err_data = await response.json()
+                            err_data = cast(ApiErrorResponse, await response.json())
                             err_msg = err_data.get("error", {}).get("message", "")
                             err_code = err_data.get("error", {}).get("code", "")
                             if err_msg:
@@ -107,11 +123,11 @@ class BaseClient:
                             msg = f"API request failed with status {response.status}"
                         raise SequenceApiError(msg)
 
-                    data = await response.json()
+                    data = cast(JsonValue, await response.json())
                     _LOGGER.debug("API Response from %s: %s", url, data)
 
                     if isinstance(data, dict) and "data" in data:
-                        return data["data"]
+                        return cast(JsonValue, data["data"])
                     return data
         except TimeoutError as err:
             raise SequenceConnectionError(
@@ -122,15 +138,16 @@ class BaseClient:
                 f"Failed to connect to Sequence API: {err}"
             ) from err
 
-    async def _async_get_all_pages(self, url: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def _async_get_all_pages(self, url: str, params: QueryParams) -> list[JsonObject]:
         """Automatically traverse and fetch all pages of a paginated list endpoint."""
         if "page" in params:
             data = await self._async_request("GET", url, params=params)
             if isinstance(data, dict) and "items" in data:
-                return data["items"]
-            return data if isinstance(data, list) else []
+                items = cast(list[JsonObject], data["items"])
+                return items
+            return cast(list[JsonObject], data) if isinstance(data, list) else []
 
-        all_items: List[Dict[str, Any]] = []
+        all_items: list[JsonObject] = []
         page = 1
         page_size = 100
         current_params = dict(params)
@@ -140,13 +157,14 @@ class BaseClient:
             current_params["page"] = page
             data = await self._async_request("GET", url, params=current_params)
 
-            items = []
-            pagination = {}
+            items: list[JsonObject] = []
+            pagination: dict[str, JsonValue] = {}
             if isinstance(data, dict):
-                items = data.get("items", [])
-                pagination = data.get("pagination", {})
+                paginated = cast(PaginatedResponse, data)
+                items = paginated.get("items", [])
+                pagination = cast(dict[str, JsonValue], paginated.get("pagination", {}))
             elif isinstance(data, list):
-                items = data
+                items = cast(list[JsonObject], data)
 
             all_items.extend(items)
             if not pagination.get("hasNextPage", False) or not items:

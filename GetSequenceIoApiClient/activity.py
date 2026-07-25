@@ -1,9 +1,16 @@
 """Activity and transfers API methods grouped into a service class."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Callable
+from typing import Callable, List, Optional
 
 from ._base import BaseClient, API_BASE_URL
+from ._params import (
+    CardTransactionsListParams,
+    ExternalTransactionsListParams,
+    TransfersByAccountListParams,
+    TransfersListParams,
+)
+from ._types import CreateTransferRequest, Headers
 from .models import ExternalTransaction, Transaction, Transfer
 
 
@@ -53,27 +60,18 @@ class ActivityService:
         page: Optional[int] = None,
         page_size: Optional[int] = None,
     ) -> List[Transfer]:
-        params: Dict[str, Any] = {}
-        if account_ids:
-            params["accountIds"] = account_ids
-        if direction:
-            params["direction"] = direction
-        if status:
-            params["status"] = status
-        if execution_mode:
-            params["executionMode"] = execution_mode
-        if from_date:
-            params["from"] = from_date
-        if to_date:
-            params["to"] = to_date
-        if origin:
-            params["origin"] = origin
-        if rule_execution_id:
-            params["rule_execution_id"] = rule_execution_id
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["pageSize"] = page_size
+        params = TransfersListParams(
+            account_ids=account_ids,
+            direction=direction,
+            status=status,
+            execution_mode=execution_mode,
+            from_date=from_date,
+            to_date=to_date,
+            origin=origin,
+            rule_execution_id=rule_execution_id,
+            page=page,
+            page_size=page_size,
+        ).to_params()
 
         url = f"{self.base_url}/transfers"
         if page is not None:
@@ -98,27 +96,18 @@ class ActivityService:
         page: Optional[int] = None,
         page_size: Optional[int] = None,
     ) -> List[Transfer]:
-        params: Dict[str, Any] = {}
-        if account_role:
-            params["accountRole"] = account_role
-        if direction:
-            params["direction"] = direction
-        if status:
-            params["status"] = status
-        if execution_mode:
-            params["executionMode"] = execution_mode
-        if from_date:
-            params["from"] = from_date
-        if to_date:
-            params["to"] = to_date
-        if origin:
-            params["origin"] = origin
-        if rule_execution_id:
-            params["rule_execution_id"] = rule_execution_id
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["pageSize"] = page_size
+        params = TransfersByAccountListParams(
+            account_role=account_role,
+            direction=direction,
+            status=status,
+            execution_mode=execution_mode,
+            from_date=from_date,
+            to_date=to_date,
+            origin=origin,
+            rule_execution_id=rule_execution_id,
+            page=page,
+            page_size=page_size,
+        ).to_params()
 
         url = f"{self.base_url}/accounts/{account_id}/transfers"
         if page is not None:
@@ -144,11 +133,11 @@ class ActivityService:
         idempotency_key: Optional[str] = None,
     ) -> Transfer:
         url = f"{self.base_url}/transfers"
-        headers: Dict[str, str] = {}
+        headers: Headers = {}
         if idempotency_key:
             headers["idempotency-key"] = idempotency_key
 
-        json_data: Dict[str, Any] = {
+        json_data: CreateTransferRequest = {
             "sourceAccountId": source_account_id,
             "destinationAccountId": destination_account_id,
             "amountInCents": amount_in_cents,
@@ -170,21 +159,15 @@ class ActivityService:
         page: Optional[int] = None,
         page_size: Optional[int] = None,
     ) -> List[ExternalTransaction]:
-        params: Dict[str, Any] = {}
-        if account_ids:
-            params["accountIds"] = account_ids
-        if direction:
-            params["direction"] = direction
-        if status:
-            params["status"] = status
-        if from_date:
-            params["from"] = from_date
-        if to_date:
-            params["to"] = to_date
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["pageSize"] = page_size
+        params = ExternalTransactionsListParams(
+            account_ids=account_ids,
+            direction=direction,
+            status=status,
+            from_date=from_date,
+            to_date=to_date,
+            page=page,
+            page_size=page_size,
+        ).to_params()
 
         url = f"{self.base_url}/external-transactions"
         if page is not None:
@@ -204,19 +187,14 @@ class ActivityService:
         page: Optional[int] = None,
         page_size: Optional[int] = None,
     ) -> List[Transaction]:
-        params: Dict[str, Any] = {}
-        if account_id:
-            params["accountId"] = account_id
-        if card_id:
-            params["cardId"] = card_id
-        if from_date:
-            params["from"] = from_date
-        if to_date:
-            params["to"] = to_date
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["pageSize"] = page_size
+        params = CardTransactionsListParams(
+            account_id=account_id,
+            card_id=card_id,
+            from_date=from_date,
+            to_date=to_date,
+            page=page,
+            page_size=page_size,
+        ).to_params()
 
         url = f"{self.base_url}/card-transactions"
         if page is not None:

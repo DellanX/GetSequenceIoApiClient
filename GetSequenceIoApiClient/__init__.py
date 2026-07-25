@@ -1,4 +1,5 @@
 from .client import SequenceApiClient
+from .config import SequenceClientConfig
 from .exceptions import (
     SequenceApiError,
     SequenceAuthError,
@@ -29,6 +30,7 @@ from .models import (
 
 __all__ = [
     "SequenceApiClient",
+    "SequenceClientConfig",
     "SequenceApiError",
     "SequenceAuthError",
     "SequenceConnectionError",

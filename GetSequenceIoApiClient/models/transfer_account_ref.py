@@ -1,35 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Optional
+
+from pydantic import Field
+
+from ._base import SequenceModel
 
 
-@dataclass
-class TransferAccountRef:
+class TransferAccountRef(SequenceModel):
     """Reference to an account inside a Transfer."""
 
-    id: Optional[str]
-    name: str
-    type: str
-    is_deleted: Optional[bool]
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> TransferAccountRef:
-        """Parse TransferAccountRef from a dictionary."""
-
-        return cls(
-            id=data.get("id"),
-            name=data.get("name", ""),
-            type=data.get("type", ""),
-            is_deleted=data.get("isDeleted") if "isDeleted" in data else data.get("is_deleted"),
-        )
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert object back to a dictionary."""
-
-        return {
-            "id": self.id,
-            "name": self.name,
-            "type": self.type,
-            "isDeleted": self.is_deleted,
-        }
+    id: Optional[str] = None
+    name: str = ""
+    type: str = ""
+    is_deleted: Optional[bool] = Field(default=None, alias="isDeleted")
