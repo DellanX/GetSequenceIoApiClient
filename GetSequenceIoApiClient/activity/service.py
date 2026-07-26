@@ -3,15 +3,15 @@ from __future__ import annotations
 
 from typing import Callable, List, Optional
 
-from ._base import BaseClient, API_BASE_URL
-from ._params import (
+from .._base import BaseClient, API_BASE_URL
+from .._params import (
     CardTransactionsListParams,
     ExternalTransactionsListParams,
     TransfersByAccountListParams,
     TransfersListParams,
 )
-from ._types import CreateTransferRequest, Headers
-from .models import ExternalTransaction, Transaction, Transfer
+from .._types import CreateTransferRequest, Headers
+from ..models import ExternalTransaction, Transaction, Transfer
 
 
 class ActivityService:

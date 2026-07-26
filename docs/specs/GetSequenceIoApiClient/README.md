@@ -41,6 +41,9 @@ This spec set is the endpoint-by-endpoint crosswalk between `openapi.json` and t
 - Rules: `rules/README.md`
 - Audit logs: `audit_logs/README.md`
 
+Service implementation references in these docs should point to:
+- `GetSequenceIoApiClient/<api_group>/service.py`
+
 Each area spec also tracks endpoint-level **test conditions**, with:
 - coverage status (`covered` / `missing`),
 - mapped pytest test method names used as test IDs.

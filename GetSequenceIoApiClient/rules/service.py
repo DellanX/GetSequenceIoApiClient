@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from ._base import BaseClient
-from ._params import RuleExecutionListParams, RulesListParams
-from ._resource import BaseResource
-from ._types import Headers, TriggerRuleRequest
-from .models import Rule, RuleExecution, RuleExecutionSummary, RuleSummary
+from .._base import BaseClient
+from .._params import RuleExecutionListParams, RulesListParams
+from .._resource import BaseResource
+from .._types import Headers, TriggerRuleRequest
+from ..models import Rule, RuleExecution, RuleExecutionSummary, RuleSummary
 
 
 class RulesService(BaseResource):

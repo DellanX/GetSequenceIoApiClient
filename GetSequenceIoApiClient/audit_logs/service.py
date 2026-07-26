@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from ._base import BaseClient
-from ._params import AuditLogsListParams
-from ._resource import BaseResource
-from .models import AuditLogEntry
+from .._base import BaseClient
+from .._params import AuditLogsListParams
+from .._resource import BaseResource
+from ..models import AuditLogEntry
 
 
 class AuditLogsService(BaseResource):

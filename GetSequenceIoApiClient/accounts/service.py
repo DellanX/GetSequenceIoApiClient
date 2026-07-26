@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from ._base import BaseClient
-from ._params import AccountsListParams
-from ._resource import BaseResource
-from .models import Account, AccountSummary
+from .._base import BaseClient
+from .._params import AccountsListParams
+from .._resource import BaseResource
+from ..models import Account, AccountSummary
 
 
 class AccountsService(BaseResource):

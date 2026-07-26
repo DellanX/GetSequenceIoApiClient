@@ -8,44 +8,31 @@ Whenever a TODO item is started, updated, or completed, update the matching docu
 - The relevant area spec README (`accounts`, `activity`, `rules`, `audit_logs`)
 - Any user-facing docs that describe endpoint support
 - For each endpoint spec entry, keep **test conditions** current with:
-  - coverage status (`✅`/`❌`)
+  - coverage status (`covered`/`missing`)
   - linked pytest test method name(s) as test IDs
 
 ## API specs not yet fully implemented
 
 The following OpenAPI endpoints are documented but do not currently have client method support:
 
-1. `POST /accounts` (`createAccount`)
-2. `GET /beneficiaries` (`listBeneficiaries`)
-3. `POST /rules` (`createRule`)
-4. `PATCH /rules/{id}` (`updateRule`)
-5. `GET /card-transactions/{id}` (`getCardTransaction`)
-6. `GET /external-transactions/{id}` (`getExternalTransaction`)
+| Endpoint | Operation | Implementation status |
+|---|---|---|
+| `POST /accounts` | `createAccount` | missing |
+| `GET /beneficiaries` | `listBeneficiaries` | missing |
+| `POST /rules` | `createRule` | missing |
+| `PATCH /rules/{id}` | `updateRule` | missing |
+| `GET /card-transactions/{id}` | `getCardTransaction` | missing |
+| `GET /external-transactions/{id}` | `getExternalTransaction` | missing |
 
 ## Test-condition gaps tied to missing endpoint implementations
 
 The following test-condition coverage cannot be completed until endpoint methods exist:
 
-1. `POST /accounts`
-   - Missing conditions: create payload serialization, typed create response parsing, error/idempotency handling.
-   - Planned test IDs: `test_async_create_account_serializes_payload`, `test_async_create_account_returns_account_model`, `test_async_create_account_error_handling`.
-
-2. `GET /beneficiaries`
-   - Missing conditions: pagination/filter behavior and typed beneficiary list parsing.
-   - Planned test IDs: `test_async_list_beneficiaries_filters_and_pagination`, `test_async_list_beneficiaries_returns_models`.
-
-3. `POST /rules`
-   - Missing conditions: create payload serialization, typed rule response parsing.
-   - Planned test IDs: `test_async_create_rule_serializes_payload`, `test_async_create_rule_returns_rule_model`.
-
-4. `PATCH /rules/{id}`
-   - Missing conditions: patch payload serialization, typed updated-rule response parsing.
-   - Planned test IDs: `test_async_update_rule_serializes_payload`, `test_async_update_rule_returns_rule_model`.
-
-5. `GET /card-transactions/{id}`
-   - Missing conditions: fetch-by-id method behavior and typed transaction parsing.
-   - Planned test IDs: `test_async_get_card_transaction_returns_transaction_model`.
-
-6. `GET /external-transactions/{id}`
-   - Missing conditions: fetch-by-id method behavior and typed external transaction parsing.
-   - Planned test IDs: `test_async_get_external_transaction_returns_external_transaction_model`.
+| Endpoint | Missing conditions | Planned test IDs |
+|---|---|---|
+| `POST /accounts` | create payload serialization; typed create response parsing; error/idempotency handling | `test_async_create_account_serializes_payload`, `test_async_create_account_returns_account_model`, `test_async_create_account_error_handling` |
+| `GET /beneficiaries` | pagination/filter behavior; typed beneficiary list parsing | `test_async_list_beneficiaries_filters_and_pagination`, `test_async_list_beneficiaries_returns_models` |
+| `POST /rules` | create payload serialization; typed rule response parsing | `test_async_create_rule_serializes_payload`, `test_async_create_rule_returns_rule_model` |
+| `PATCH /rules/{id}` | patch payload serialization; typed updated-rule response parsing | `test_async_update_rule_serializes_payload`, `test_async_update_rule_returns_rule_model` |
+| `GET /card-transactions/{id}` | fetch-by-id method behavior; typed transaction parsing | `test_async_get_card_transaction_returns_transaction_model` |
+| `GET /external-transactions/{id}` | fetch-by-id method behavior; typed external transaction parsing | `test_async_get_external_transaction_returns_external_transaction_model` |
