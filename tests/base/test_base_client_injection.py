@@ -70,3 +70,13 @@ async def test_async_get_all_pages_with_injected_request_factory_paginates():
     items = await client._async_get_all_pages("http://example", {})
     assert isinstance(items, list)
     assert {it["id"] for it in items} == {"p1", "p2"}
+
+
+@pytest.mark.asyncio
+async def test_default_timeout_ctx_factory_works_without_asyncio_timeout(monkeypatch):
+    monkeypatch.delattr(_base.asyncio, "timeout", raising=False)
+
+    session = type("S", (), {"request": lambda *a, **k: Resp(200, {})})()
+    client = _base.BaseClient(session, "token")
+    result = await client._async_request("GET", "http://example")
+    assert result == {}

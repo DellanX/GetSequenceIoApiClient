@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 from typing import Optional, Callable, AsyncContextManager, cast
 
 import aiohttp
@@ -21,6 +22,27 @@ API_BASE_URL = "https://api.getsequence.io/platform/v1"
 API_TIMEOUT = 30
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def _default_timeout_ctx(timeout_seconds: int):
+    # Python 3.11+ has asyncio.timeout; Python 3.10 needs a fallback.
+    if hasattr(asyncio, "timeout"):
+        async with asyncio.timeout(timeout_seconds):
+            yield
+        return
+
+    task = asyncio.current_task()
+    if task is None:
+        raise RuntimeError("No current asyncio task for timeout context")
+
+    timeout_handle = asyncio.get_running_loop().call_later(timeout_seconds, task.cancel)
+    try:
+        yield
+    except asyncio.CancelledError as err:
+        raise TimeoutError("Operation timed out") from err
+    finally:
+        timeout_handle.cancel()
 
 
 class BaseClient:
@@ -68,7 +90,7 @@ class BaseClient:
         self._timeout_ctx_factory = (
             timeout_ctx_factory
             if timeout_ctx_factory is not None
-            else (lambda t: asyncio.timeout(t))
+            else _default_timeout_ctx
         )
 
     async def _make_request(
