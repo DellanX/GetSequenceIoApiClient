@@ -88,3 +88,4 @@ Thumbs.db
 
 # Node
 node_modules/
+coverage.xml
